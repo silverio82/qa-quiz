@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Middle QA Assessment Test</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; color: #333; }
+        .quiz-container { max-width: 650px; background: white; margin: 40px auto; padding: 35px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        h2, h3 { color: #1e293b; margin-top: 0; }
+        p { line-height: 1.6; color: #475569; font-size: 16px; }
+        .step { display: none; }
+        .step.active { display: block; }
+        .input-group { margin-bottom: 25px; }
+        input[type="text"] { width: 100%; padding: 12px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 16px; }
+        input[type="text"]:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+        .option { display: block; background: #f8fafc; border: 1px solid #e2e8f0; padding: 14px; margin: 12px 0; border-radius: 6px; cursor: pointer; transition: all 0.2s ease; font-size: 15px; }
+        .option:hover { background: #f1f5f9; border-color: #cbd5e1; transform: translateY(-1px); }
+        .score { font-size: 26px; font-weight: bold; color: #1e3a8a; margin: 20px 0; }
+        .verdict { font-weight: 600; padding: 15px; border-radius: 6px; background: #eff6ff; color: #1e40af; display: inline-block; }
+        .loading { display: none; color: #64748b; font-style: italic; }
+        button { background: #2563eb; color: white; border: none; padding: 12px 24px; font-size: 16px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: background 0.2s; }
+        button:hover { background: #1d4ed8; }
+    </style>
+</head>
+<body>
+
+<div class="quiz-container">
+    <!-- Step 1: Login -->
+    <div id="step-start" class="step active">
+        <h2>Middle QA Assessment Test</h2>
+        <p>Welcome! This test evaluates situational judgment, stress tolerance, and innovative thinking for the Middle QA Engineer position.</p>
+        <p>Please enter your details to start the assessment.</p>
+        <div class="input-group">
+            <input type="text" id="candidate-name" placeholder="First and Last Name" required>
+        </div>
+        <button onclick="startQuiz()">Start Test</button>
+    </div>
+
+    <!-- Step 2: Live Questions -->
+    <div id="step-question" class="step">
+        <h3 id="question-number">Question 1 of 20</h3>
+        <p id="question-text">Question loading...</p>
+        <div id="options-container"></div>
+    </div>
+
+    <!-- Step 3: Finish Screen -->
+    <div id="step-result" class="step">
+        <h2>Assessment Completed!</h2>
+        <p id="thanks-message"></p>
+        <p class="score" id="final-score"></p>
+        <p><span id="verdict" class="verdict"></span></p>
+        <p class="loading" id="loading-text">Sending results to HR, please wait...</p>
+    </div>
+</div>
+
+<script>
+    // Configuration: INSERT YOUR FORMSPREE URL HERE
+    const FORMSPREE_URL = "https://formspree.io/f/xbdeqpyd"; 
+
+    // Part 1: First 10 Questions
+    const quizData = [
+        {
+            q: "You are reviewing a 50-page report. On page 40, you notice a heading font style slightly deviates from the spec. What do you do?",
+            options: [
+                { text: "A) Fix it immediately or log a bug. It's my job to notice everything.", score: 0 },
+                { text: "B) Ignore it. It's a minor visual glitch that doesn't affect functionality, and time is tight.", score: 1 },
+                { text: "C) Document it in the backlog/notes to address later if time permits.", score: 2 }
+            ]
+        },
+        {
+            q: "You have to cover a massive new feature with test cases in just one day. Detailed step-by-step writing would take two days. How do you proceed?",
+            options: [
+                { text: "A) Write detailed test cases anyway, even if I don't finish execution on time.", score: 0 },
+                { text: "B) Switch to high-level checklists/mind-maps, align core scenarios with the PM, and start testing.", score: 2 },
+                { text: "C) Skip documentation entirely and perform ad-hoc testing from memory to save time.", score: 1 }
+            ]
+        },
+        {
+            q: "A developer claims they wrote 'perfect validation' for a registration age input field. Where do you start testing?",
+            options: [
+                { text: "A) Enter typical expected numbers (e.g., 25, 30, 45) to ensure it works fundamentally.", score: 0 },
+                { text: "B) Use boundary values and negative testing: leave blank, try letters, negative values, 0, decimals, and extreme numbers.", score: 2 },
+                { text: "C) Ask an AI to generate happy-path scenarios, run them quickly, and close the task.", score: 1 }
+            ]
+        },
+        {
+            q: "You are assigned to regression test a legacy system with no active documentation. How do you approach it?",
+            options: [
+                { text: "A) Refuse to test until the team or product manager provides updated specifications.", score: 0 },
+                { text: "B) Analyze existing user journeys, explore the application, and interview senior team members to build a checklist.", score: 2 },
+                { text: "C) Run standard click-testing on the main pages and assume everything else works as before.", score: 1 }
+            ]
+        },
+        {
+            q: "You notice a typo in a backend error log that doesn't impact the UI or system behavior. What is your action?",
+            options: [
+                { text: "A) Log a low-priority technical debt ticket so it can be fixed eventually.", score: 2 },
+                { text: "B) Log a critical bug because logs must remain absolutely pristine at all times.", score: 0 },
+                { text: "C) Ignore it entirely; QA shouldn't waste time looking at backend typos.", score: 1 }
+            ]
+        },
+        {
+            q: "Friday at 18:00. Critical production release in 2 hours. You find a bug replicating in 5% of runs that crashes the app. The developer insists on releasing and fixing on Monday. What do you do?",
+            options: [
+                { text: "A) Agree to avoid delaying the release and file the bug report for next week.", score: 0 },
+                { text: "B) Block the release, present crash logs and business risks to the PM/Lead, and offer workaround paths.", score: 2 },
+                { text: "C) Argue aggressively with the developer publicly and refuse to test anything until it's fixed.", score: 1 }
+            ]
+        },
+        {
+            q: "A Project Manager systematically asks you for 'last-minute urgent testing' at the end of the day, forcing overtime. How do you handle it?",
+            options: [
+                { text: "A) Comply silently while internal frustration and burnout accumulate.", score: 0 },
+                { text: "B) Firmly decline and walk out exactly at 18:00, leaving them to manage.", score: 1 },
+                { text: "C) Complete the blocker task if critical, but escalate the systemic planning failure during Retrospective or with the Lead next morning.", score: 2 }
+            ]
+        },
+        {
+            q: "One hour before a release, you find three bugs: 1) Layout shifting in a rare browser. 2) The 'Buy' button fails on the first click but works on the second. 3) An invisible server warning log. Time is scarce. What takes priority?",
+            options: [
+                { text: "A) Bug 1 first (visual appearance defines company image), then Bug 2.", score: 0 },
+                { text: "B) Bug 2 (Blocker/Critical) because it directly blocks business revenue. Bug 1 is minor.", score: 2 },
+                { text: "C) Throw all three to developers simultaneously and let them sort it out.", score: 1 }
+            ]
+        },
+        {
+            q: "The sprint scope changes drastically mid-week, adding 5 new features to your QA queue without adjusting the deadline. What is your response?",
+            options: [
+                { text: "A) Work late every night trying to cover everything perfectly at all costs.", score: 0 },
+                { text: "B) Request an immediate sync with the PM to recalculate test coverage capacity, identify critical paths, and drop low-risk tests.", score: 2 },
+                { text: "C) Complain to the development team that the sprint is ruined and stop logging status updates.", score: 1 }
+            ]
+        },
+        {
+            q: "A hotfix needs to go live immediately to patch an exploit, leaving no time for a full regression run. How do you mitigate risk?",
+            options: [
+                { text: "A) Refuse to sign off on the hotfix without a standard 4-hour regression cycle.", score: 0 },
+                { text: "B) Run high-risk smoke tests explicitly focused on the impacted exploit area and immediate dependencies.", score: 2 },
+                { text: "C) Approve the build instantly without testing since it's an emergency fix.", score: 1 }
+            ]
+        }
+        {
+            q: "A Senior Developer systematically rejects your bug reports, stating 'You are testing incorrectly.' Conversations reach a deadlock. What do you do?",
+            options: [
+                { text: "A) Stop logging bugs against his modules to preserve team harmony.", score: 0 },
+                { text: "B) Propose a brief 10-minute call to reproduce the bug together against specs. Loop in Lead/PO only if unresolved.", score: 2 },
+                { text: "C) Go directly to the Engineering Manager to complain about toxicity.", score: 1 }
+            ]
+        },
+        {
+            q: "During a sync, a developer publicly blames QA for stalling a delayed release. In reality, code reached QA very late. Your reaction?",
+            options: [
+                { text: "A) Lash out emotionally: 'It's your fault for writing sloppy code at the last minute!'", score: 0 },
+                { text: "B) State facts and Jira audit trails calmly: 'The code reached QA 4 hours prior to deadline instead of the agreed 2 days.'", score: 2 },
+                { text: "C) Remain silent, then gossip about it with other team members afterwards.", score: 1 }
+            ]
+        },
+        {
+            q: "A critical bug slips to production on a build you personally signed off on. Business is losing money. Your immediate action?",
+            options: [
+                { text: "A) Look for defensive excuses: vague requirements, tight timelines, developer interruptions.", score: 0 },
+                { text: "B) Own the oversight, reproduce it on staging, isolate the gap in the test plan, and update tests to ensure it never happens again.", score: 2 },
+                { text: "C) Deflect responsibility by claiming that specific edge case wasn't outlined in the product brief.", score: 1 }
+            ]
+        },
+        {
+            q: "You find an issue you consider a bug, but the Product Owner insists it's intended behavior despite poor user experience. How do you proceed?",
+            options: [
+                { text: "A) Accept the PO's decision gracefully, but document the UX risk in the ticket notes for visibility.", score: 2 },
+                { text: "B) Keep reopening the bug ticket repeatedly until the PO gives in to your view.", score: 0 },
+                { text: "C) Delete the bug ticket immediately and forget it ever happened.", score: 1 }
+            ]
+        },
+        {
+            q: "A new junior QA engineer joins your team and keeps logging duplicate, poorly-formatted bug reports. How do you handle it?",
+            options: [
+                { text: "A) Delete their tickets quietly and rewrite them yourself to save time.", score: 0 },
+                { text: "B) Complain to the Team Lead that the new hire is slowing down team velocity.", score: 1 },
+                { text: "C) Schedule a mentoring session to guide them through formatting guidelines and duplication checks.", score: 2 }
+            ]
+        },
+        {
+            q: "You task an AI to write a Postman test collection for a new API. It returns clean, extensive code. What do you do next?",
+            options: [
+                { text: "A) Safely import and execute on staging immediately; AI rarely fails simple logic.", score: 0 },
+                { text: "B) Review the code structure, check assertion criteria, map it to Swagger specs, and manually verify failures.", score: 2 },
+                { text: "C) Decline using AI altogether; manual scripting is inherently safer.", score: 1 }
+            ]
+        },
+        {
+            q: "An AI generates API tests for authentication. Tests pass (Green), but manual verification reveals a wrong password returns 200 OK instead of 401. Why?",
+            options: [
+                { text: "A) The AI wrote a superficial assertion (e.g., verifying response existence rather than the exact HTTP status code).", score: 2 },
+                { text: "B) Postman suffered an isolated scripting rendering glitch.", score: 1 },
+                { text: "C) The AI is correct, meaning authentication is working and manual execution was flawed.", score: 0 }
+            ]
+        },
+        {
+            q: "The AI keeps providing bloated, broken, or legacy JS scripts for API testing, wasting your time. How do you resolve this?",
+            options: [
+                { text: "A) Give up on AI entirely for this workflow and write everything from scratch.", score: 1 },
+                { text: "B) Optimize the prompt: assign a role, supply JSON schemas, provide Swagger data, and feed a 'Few-Shot' working script sample.", score: 2 },
+                { text: "C) Spam the identical prompt repeatedly hoping a fresh generation cycle fixes the output.", score: 0 }
+            ]
+        },
+        {
+            q: "The team wants to accelerate end-to-end UI testing. Management suggests feeding proprietary product source code to a public AI model. Your stance?",
+            options: [
+                { text: "A) Agree enthusiastically to save weeks of heavy automation heavy-lifting.", score: 0 },
+                { text: "B) Objects based on security data compliance policies. Suggest localized models or passing completely anonymized mock patterns.", score: 2 },
+                { text: "C) Total refusal of any AI initiatives moving forward to shield yourself from liability.", score: 1 }
+            ]
+        },
+        {
+            q: "You need to test an API endpoint that has no documentation whatsoever. How do you leverage AI?",
+            options: [
+                { text: "A) I don't. AI can't help without explicit upfront documentation inputs.", score: 1 },
+                { text: "B) Use a proxy tool to capture real request/response payloads, then feed anonymized samples to AI to generate a schema definition.", score: 2 },
+                { text: "C) Feed random parameters into the AI and ask it to guess what the backend code looks like.", score: 0 }
+            ]
+        }
+    ];
+
+    let currentQuestionIdx = 0;
+    let totalScore = 0;
+    let candidateName = "";
+
+    function startQuiz() {
+        const nameInput = document.getElementById("candidate-name").value.trim();
+        if (!nameInput) {
+            alert("Please enter your First and Last Name to proceed.");
+            return;
+        }
+        candidateName = nameInput;
+        document.getElementById("step-start").classList.remove("active");
+        document.getElementById("step-question").classList.add("active");
+        showQuestion();
+    }
+
+    function showQuestion() {
+        if (currentQuestionIdx >= quizData.length) {
+            submitResults();
+            return;
+        }
+        const currentQ = quizData[currentQuestionIdx];
+        document.getElementById("question-number").innerText = `Question ${currentQuestionIdx + 1} of ${quizData.length}`;
+        document.getElementById("question-text").innerText = currentQ.q;
+        
+        const optionsDiv = document.getElementById("options-container");
+        optionsDiv.innerHTML = "";
+        
+        currentQ.options.forEach(opt => {
+            const optElem = document.createElement("div");
+            optElem.className = "option";
+            optElem.innerText = opt.text;
+            optElem.onclick = () => selectOption(opt.score);
+            optionsDiv.appendChild(optElem);
+        });
+    }
+
+    function selectOption(score) {
+        totalScore += score;
+        currentQuestionIdx++;
+        showQuestion();
+    }
+
+    function submitResults() {
+        document.getElementById("step-question").classList.remove("active");
+        document.getElementById("step-result").classList.add("active");
+        document.getElementById("loading-text").style.display = "block";
+        
+        let verdict = "";
+        if (totalScore >= 34) verdict = "Category: Strong Middle / Senior Potential";
+        else if (totalScore >= 24) verdict = "Category: Solid Middle";
+        else verdict = "Category: Junior+ / Needs Review";
+
+        document.getElementById("thanks-message").innerText = `Thank you, ${candidateName}! Your test has been completed.`;
+        document.getElementById("final-score").innerText = `Score: ${totalScore} / 40 points`;
+        document.getElementById("verdict").innerText = verdict;
+
+        // Formspree payload delivery
+        const payload = {
+            name: candidateName,
+            score: `${totalScore} / 40`,
+            verdict: verdict
+        };
+
+        fetch(FORMSPREE_URL, {
+            method: "POST",
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(response => {
+            if (response.ok) {
+                document.getElementById("loading-text").style.color = "#16a34a";
+                document.getElementById("loading-text").innerText = "Results successfully delivered to HR.";
+            } else {
+                throw new Error("Formspree rejected the request");
+            }
+        })
+        .catch(error => {
+            document.getElementById("loading-text").style.color = "#dc2626";
+            document.getElementById("loading-text").innerText = "Network error. Please screenshot this screen and email it to HR.";
+            console.error("Submission error:", error);
+        });
+    }
+</script>
+</body>
+</html>
