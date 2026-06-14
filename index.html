@@ -270,39 +270,48 @@
         document.getElementById("step-result").classList.add("active");
         document.getElementById("loading-text").style.display = "block";
         
+        // 1. Определяем базовый вердикт и подробный профиль
         let verdict = "";
-        if (totalScore >= 34) verdict = "Category: Strong Middle / Senior Potential";
-        else if (totalScore >= 24) verdict = "Category: Solid Middle";
-        else verdict = "Category: Junior+ / Needs Review";
+        let psychologicalProfile = "";
 
-        document.getElementById("thanks-message").innerText = `Thank you, ${candidateName}! Your test has been completed.`;
+        if (totalScore >= 34) {
+            verdict = "Category: Strong Middle / Senior Potential";
+            psychologicalProfile = "STRONG MIDDLE: Mature expert with a solid business mindset. Solves conflicts directly with facts/logs without escalating. High stress tolerance under release pressure. Uses AI efficiently as a tool but stringently reviews its assertions to catch false positives.";
+        } else if (totalScore >= 24) {
+            verdict = "Category: Solid Middle";
+            psychologicalProfile = "SOLID MIDDLE: Technically sound and stable engineer. Applies test design correctly. However, may lack flexibility under heavy pressure (tends to over-time or slip into perfectionism instead of pushing back on processes). Might spend too much time fixing AI scripts manually rather than optimizing prompts.";
+        } else {
+            verdict = "Category: Junior+ / Needs Review";
+            psychologicalProfile = "JUNIOR+ / RED FLAG: Passive stance or lacks autonomy. Tends to avoid ownership during production failures or yields too easily to developers' pressure. Critical risk: blindly trusts AI outputs without verifying inside code, which compromises product quality.";
+        }
+
+        // 2. Выводим результат кандидату на экран
+        document.getElementById("thanks-message").innerText = `Thank you, ${candidateName}! Your test is complete.`;
         document.getElementById("final-score").innerText = `Score: ${totalScore} / 40 points`;
         document.getElementById("verdict").innerText = verdict;
 
-        // Formspree payload delivery
-        const payload = {
-            name: candidateName,
-            score: `${totalScore} / 40`,
-            verdict: verdict
-        };
-
+        // 3. Отправляем расширенные данные в Formspree для HR
         fetch(FORMSPREE_URL, {
             method: "POST",
             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify({ 
+                candidate_name: candidateName, 
+                total_score: `${totalScore} / 40`, 
+                category_verdict: verdict,
+                hr_psychological_profile: psychologicalProfile // Это поле придет к вам на почту
+            })
         })
-        .then(response => {
-            if (response.ok) {
-                document.getElementById("loading-text").style.color = "#16a34a";
-                document.getElementById("loading-text").innerText = "Results successfully delivered to HR.";
-            } else {
-                throw new Error("Formspree rejected the request");
-            }
+        .then(res => { 
+            if (res.ok) { 
+                document.getElementById("loading-text").style.color = "#16a34a"; 
+                document.getElementById("loading-text").innerText = "Results and psychological profile delivered to HR."; 
+            } else { 
+                throw new Error(); 
+            } 
         })
-        .catch(error => {
-            document.getElementById("loading-text").style.color = "#dc2626";
-            document.getElementById("loading-text").innerText = "Network error. Please screenshot this screen and email it to HR.";
-            console.error("Submission error:", error);
+        .catch(() => { 
+            document.getElementById("loading-text").style.color = "#dc2626"; 
+            document.getElementById("loading-text").innerText = "Network error. Please screenshot this page for HR."; 
         });
     }
 </script>
